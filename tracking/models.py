@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 
 
 class CustomUser(AbstractUser):
+    """Модель пользователя, определяет любого пользователя системы"""
     position = models.CharField(max_length=100, blank=True)
     is_active = models.BooleanField(default=True)
 
@@ -11,6 +12,7 @@ class CustomUser(AbstractUser):
 
 
 class Project(models.Model):
+    """Модель проекта"""
     id_key = models.CharField(max_length=100)
     name = models.CharField(max_length=100)
     description = models.CharField(max_length=100)
@@ -22,8 +24,10 @@ class Project(models.Model):
         return f"{self.id_key} - {self.name}"
 
 
-
 class TimeEntry(models.Model):
+    """Модель уникальной записи. Определяет связь проекта и пользоватял 
+    с внесенной записью времени
+    """
     ROLE_CHOICES = [
         ('executor', 'Исполнитель'),
         ('reviewer', 'Проверяющий'),
@@ -38,11 +42,16 @@ class TimeEntry(models.Model):
         choices=ROLE_CHOICES,
         default='executor'
     )
+    is_overtime = models.BooleanField(
+        default=False,
+        verbose_name='Овертайм',
+        help_text='Овертайм'
+    )
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta: 
-        unique_together = ['user', 'project', 'hours']
+        unique_together = ['user', 'project', 'date', 'hours']
         verbose_name_plural = "Time_entries"
         ordering = ['-date', '-created_at']
 

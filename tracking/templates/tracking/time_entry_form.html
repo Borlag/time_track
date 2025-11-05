@@ -1,35 +1,134 @@
 {% extends 'tracking/base.html' %}
 
-{% block title %}Новая запись - {{ block.super }}{% endblock %}
-
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-6">
+    <div class="col-md-8">
         <div class="card">
             <div class="card-header">
                 <h4 class="mb-0">{{ title }}</h4>
             </div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" novalidate>
                     {% csrf_token %}
                     
-                    {% for field in form %}
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.project.id_for_label }}" class="form-label">
+                                    {{ form.project.label }}
+                                </label>
+                                {{ form.project }}
+                                {% if form.project.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.project.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.role.id_for_label }}" class="form-label">
+                                    {{ form.role.label }}
+                                </label>
+                                {{ form.role }}
+                                {% if form.role.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.role.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.date.id_for_label }}" class="form-label">
+                                    {{ form.date.label }}
+                                </label>
+                                {{ form.date }}
+                                {% if form.date.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.date.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="{{ form.hours.id_for_label }}" class="form-label">
+                                    {{ form.hours.label }}
+                                </label>
+                                {{ form.hours }}
+                                {% if form.hours.errors %}
+                                <div class="text-danger small">
+                                    {% for error in form.hours.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <div class="form-check mt-4 pt-3">
+                                    {{ form.is_overtime }}
+                                    <label for="{{ form.is_overtime.id_for_label }}" class="form-check-label">
+                                        {{ form.is_overtime.label }}
+                                    </label>
+                                    {% if form.is_overtime.help_text %}
+                                    <div class="form-text">{{ form.is_overtime.help_text }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
-                        <label for="{{ field.id_for_label }}" class="form-label">
-                            {{ field.label }}
+                        <label for="{{ form.description.id_for_label }}" class="form-label">
+                            {{ form.description.label }}
                         </label>
-                        {{ field }}
-                        {% if field.errors %}
-                        <div class="text-danger small">{{ field.errors }}</div>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                        <div class="text-danger small">
+                            {% for error in form.description.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
                         {% endif %}
                     </div>
-                    {% endfor %}
                     
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">Сохранить</button>
                         <a href="{% url 'tracking:dashboard' %}" class="btn btn-secondary">Отмена</a>
                     </div>
                 </form>
+            </div>
+        </div>
+        
+
+        <div class="card mt-3">
+            <div class="card-body">
+                <h6>Информация о лимитах:</h6>
+                <ul class="mb-0">
+                    <li>Обычный рабочий день: до 8 часов</li>
+                    <li>Овертайм: без ограничений (отмечайте галочкой)</li>
+                    <li>Максимум в сутки: 24 часа</li>
+                </ul>
             </div>
         </div>
     </div>

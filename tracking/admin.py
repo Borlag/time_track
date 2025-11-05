@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
+
 from .models import CustomUser, Project, TimeEntry
+
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
@@ -31,6 +33,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 @admin.register(TimeEntry)
 class TimeEntryAdmin(admin.ModelAdmin):
-    list_display = ('user', 'project', 'hours', 'date', 'created_at')
-    list_filter = ('date', 'project')
+    list_display = ('user', 'project', 'role', 'hours', 'is_overtime', 'date', 'created_at')
+    list_filter = ('is_overtime', 'role', 'date', 'project')
     search_fields = ('user__username', 'project__name')
+    list_editable = ('is_overtime',)
