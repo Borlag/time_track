@@ -1,5 +1,8 @@
-from django.db import models
+from decimal import Decimal
+
 from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db import models
 
 
 class CustomUser(AbstractUser):
@@ -35,7 +38,14 @@ class TimeEntry(models.Model):
     ]
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    hours = models.IntegerField()
+    hours = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(Decimal('0.25')),
+            MaxValueValidator(Decimal('24')),
+        ],
+    )
     date = models.DateField()
     role = models.CharField(
         max_length=20,

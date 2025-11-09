@@ -1,9 +1,11 @@
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from django import forms
-from django.db import models
+from decimal import Decimal
 
-from .models import TimeEntry, Project
+from django import forms
+from django.core.exceptions import ValidationError
+from django.db import models
+from django.utils import timezone
+
+from .models import Project, TimeEntry
 
 
 class TimeEntryForm(forms.ModelForm):
@@ -13,13 +15,13 @@ class TimeEntryForm(forms.ModelForm):
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'hours': forms.NumberInput(attrs={
-                'class': 'form-control', 
-                'step': '0.5',
-                'min': '0.5',
+                'class': 'form-control',
+                'step': '0.25',
+                'min': '0.25',
                 'max': '24'
             }),
             'description': forms.Textarea(attrs={
-                'rows': 3, 
+                'rows': 3,
                 'class': 'form-control',
                 'placeholder': 'Опишите выполненную работу...'
             }),
@@ -38,53 +40,57 @@ class TimeEntryForm(forms.ModelForm):
         help_texts = {
             'is_overtime': 'Отметьте если работали сверхурочно',
         }
-    
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         self.fields['project'].queryset = Project.objects.filter(is_active=True)
-        
+
         self.fields['date'].initial = timezone.now().date()
-    
+
     def clean(self):
         cleaned_data = super().clean()
         hours = cleaned_data.get('hours')
         date = cleaned_data.get('date')
         is_overtime = cleaned_data.get('is_overtime')
-        
-        if hours and date and self.user:
-            if not is_overtime:
-                total_hours_today = TimeEntry.objects.filter(
-                    user=self.user,
-                    date=date,
-                    is_overtime=False
-                ).exclude(pk=self.instance.pk if self.instance else None).aggregate(
-                    total=models.Sum('hours')
-                )['total'] or 0
-                
-                total_after_add = total_hours_today + hours
-                
-                if total_after_add > 8:
-                    remaining_hours = 8 - total_hours_today
-                    if remaining_hours > 0:
-                        raise ValidationError(
-                            f"Превышен лимит 8 часов в день!"
-                            f"У вас уже {total_hours_today} часов за {date}. "
+
+        if hours and date and self.user and not is_overtime:
+            base_qs = TimeEntry.objects.filter(
+                user=self.user,
+                date=date,
+                is_overtime=False,
+            )
+            if self.instance and self.instance.pk:
+                base_qs = base_qs.exclude(pk=self.instance.pk)
+
+            total_hours_today = base_qs.aggregate(total=models.Sum('hours'))['total'] or Decimal('0')
+            total_after_add = total_hours_today + hours
+            daily_limit = Decimal('8')
+
+            if total_after_add > daily_limit:
+                remaining_hours = daily_limit - total_hours_today
+                if remaining_hours > Decimal('0'):
+                    raise ValidationError(
+                        (
+                            "Превышен лимит 8 часов в день!"
+                            f" У вас уже {total_hours_today} часов за {date}. "
                             f"Доступно еще {remaining_hours} часов. "
-                            f"или ставьте время в овертайм"
+                            "Или отметьте запись как овертайм."
                         )
-                    else:
-                        raise ValidationError(
-                            f"Вы уже отработали 8 часов за {date}. "
-                            f"Отметьте 'Это овертайм?' чтобы добавить сверхурочные часы."
-                        )
-        
+                    )
+                raise ValidationError(
+                    (
+                        f"Вы уже отработали 8 часов за {date}. "
+                        "Отметьте 'Это овертайм?' чтобы добавить сверхурочные часы."
+                    )
+                )
+
         return cleaned_data
-    
+
     def clean_hours(self):
         hours = self.cleaned_data.get('hours')
-        if hours and hours <= 0:
+        if hours and hours <= Decimal('0'):
             raise ValidationError("Часы должны быть больше 0")
-        if hours and hours > 24:
+        if hours and hours > Decimal('24'):
             raise ValidationError("Нельзя указать больше 24 часов за день")
         return hours
